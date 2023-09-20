@@ -4,6 +4,8 @@ const fetch = require('node-fetch');
 const fs = require('fs');
 const https = require('https');
 
+const words = require('./data');
+
 const app = express();
 const limiter = rateLimit({
   windowMs: 5 * 60 * 1000,
@@ -12,13 +14,17 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
-app.get('/api/fetch', async(req, res) => {
+app.get('/api/fetch/:page', async(req, res) => {
+  let { page } = req.params;
+
+  const start = page > 1 ? (page - 1) * 50 + 1 : 0;
+  const end = words.length < start + 50 ? words.length : start + 50;
+
+  const functions = [];
   try {
-    const functions = [
-      fetch('https://api.dictionaryapi.dev/api/v2/entries/en/apple'),
-      fetch('https://api.dictionaryapi.dev/api/v2/entries/en/peach'),
-      fetch('https://api.dictionaryapi.dev/api/v2/entries/en/pear')
-    ];
+    for (let i = start; i < end; i++) {
+      functions.push(fetch('https://api.dictionaryapi.dev/api/v2/entries/en/' + words[i]));
+    }
 
     const response = await Promise.all(functions);
 
