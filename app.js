@@ -31,26 +31,60 @@ app.get('/api/fetch/:page', async(req, res) => {
     let writeData = '[';
 
     const data = await Promise.all(response.map(async(item) => {
-      const result = await item.json();
-      const phonetics = result[0].phonetics;
-      for (let i = 0; i < phonetics.length; i++) {
-        const audio = phonetics[i].audio.split('/');
-        const filename = audio[audio.length - 1];
+      const items = await item.json();
 
-        if (!fs.existsSync('audio/' + filename)) {
-          const file = fs.createWriteStream('audio/' + filename);
+      let result = {
+        word: items[0].word,
+        phonetics: [],
+        meanings: []
+      }
 
-          https.get(phonetics[i].audio, function(response) {
-            response.pipe(file);
+      for (let i = 0; i < items.length; i++) {
+        const phonetics = items[i].phonetics;
+        for (let j = 0; j < phonetics.length; j++) {
+          if (phonetics[j].audio != '') {
+            const audio = phonetics[j].audio.split('/');
+            const filename = audio[audio.length - 1];
 
-            file.on("finish", () => {
-              file.close();
-            });
+            if (!result.phonetics.includes(filename)) {
+              if (!fs.existsSync('audio/' + filename)) {
+                const file = fs.createWriteStream('audio/' + filename);
+    
+                https.get(phonetics[i].audio, function(response) {
+                  response.pipe(file);
+    
+                  file.on("finish", () => {
+                    file.close();
+                  });
+                });
+              }
+  
+              result.phonetics.push(filename);
+            }
+          }
+        }
+
+        const meanings = items[i].meanings;
+        for (let j = 0; j < meanings.length; j++) {
+          const meaning = meanings[j];
+          const definitions = [];
+
+          for (let k = 0; k < meaning.definitions.length; k++) {
+            const definition = meaning.definitions[k].definition;
+
+            if (definition != '') {
+              definitions.push(meaning.definitions[k].definition);
+            }
+          }
+
+          result.meanings.push({
+            partOfSpeech: meaning.partOfSpeech,
+            definitions
           });
         }
       }
 
-      writeData += JSON.stringify(result[0]) + ',';
+      writeData += JSON.stringify(result) + ',';
 
       return result;
     }));
