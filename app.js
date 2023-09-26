@@ -14,6 +14,47 @@ const limiter = rateLimit({
 
 app.use(limiter);
 
+app.get('/api/download/:page', async(req, res) => {
+  let { page } = req.params;
+
+  const start = page > 1 ? (page - 1) * 500 + 1 : 0;
+  const end = words.length < start + 500 ? words.length : start + 500;
+
+  const path = 'https://ssl.gstatic.com/dictionary/static/pronunciation/2022-03-02/audio/ab/';
+
+  for (let i = start; i < end; i++) {
+    const ukFile = words[i] + '-uk.mp3'
+    if (!fs.existsSync('audio/' + ukFile)) {
+      const file = fs.createWriteStream('audio/' + ukFile);
+
+      https.get(path + words[i] + '_en_gb_1.mp3', function(response) {
+        response.pipe(file);
+
+        file.on("finish", () => {
+          file.close();
+        });
+      });
+    }
+  }
+
+  for (let i = start; i < end; i++) {
+    const usFile = words[i] + '-us.mp3'
+    if (!fs.existsSync('audio/' + usFile)) {
+      const file = fs.createWriteStream('audio/' + usFile);
+
+      https.get(path + words[i] + '_en_us_1.mp3', function(response) {
+        response.pipe(file);
+
+        file.on("finish", () => {
+          file.close();
+        });
+      });
+    }
+  }
+
+  return res.status(200);
+});
+
 app.get('/api/fetch/:page', async(req, res) => {
   let { page } = req.params;
 
