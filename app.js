@@ -70,7 +70,7 @@ app.get('/api/download/:page', async(req, res) => {
 app.get('/api/fetch/:page', async(req, res) => {
   let { page } = req.params;
 
-  const start = page > 1 ? (page - 1) * 50 + 1 : 0;
+  const start = page > 1 ? (page - 1) * 50 : 0;
   const end = words.length < start + 50 ? words.length : start + 50;
 
   const functions = [];
