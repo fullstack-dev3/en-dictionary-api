@@ -20,34 +20,46 @@ app.get('/api/download/:page', async(req, res) => {
   const start = page > 1 ? (page - 1) * 500 + 1 : 0;
   const end = words.length < start + 500 ? words.length : start + 500;
 
-  const path = 'https://ssl.gstatic.com/dictionary/static/pronunciation/2022-03-02/audio/ab/';
-
   for (let i = start; i < end; i++) {
-    const ukFile = words[i] + '-uk.mp3'
+    const word = words[i];
+    const path = 'https://ssl.gstatic.com/dictionary/static/pronunciation/2022-03-02/audio/' + word.substring(0, 2) + '/';
+    const ukFile = word + '-uk.mp3';
+
     if (!fs.existsSync('audio/' + ukFile)) {
-      const file = fs.createWriteStream('audio/' + ukFile);
+      https.get(path + word + '_en_gb_1.mp3', function(response) {
+        if (response.statusCode == 404) {
+          console.log(word);
+        } else {
+          const file = fs.createWriteStream('audio/' + ukFile);
 
-      https.get(path + words[i] + '_en_gb_1.mp3', function(response) {
-        response.pipe(file);
+          response.pipe(file);
 
-        file.on("finish", () => {
-          file.close();
-        });
+          file.on("finish", () => {
+            file.close();
+          });
+        }
       });
     }
   }
 
   for (let i = start; i < end; i++) {
-    const usFile = words[i] + '-us.mp3'
+    const word = words[i];
+    const path = 'https://ssl.gstatic.com/dictionary/static/pronunciation/2022-03-02/audio/' + word.substring(0, 2) + '/';
+    const usFile = word + '-us.mp3';
+
     if (!fs.existsSync('audio/' + usFile)) {
-      const file = fs.createWriteStream('audio/' + usFile);
+      https.get(path + word + '_en_us_1.mp3', function(response) {
+        if (response.statusCode == 404) {
+          console.log(word);
+        } else {
+          const file = fs.createWriteStream('audio/' + usFile);
 
-      https.get(path + words[i] + '_en_us_1.mp3', function(response) {
-        response.pipe(file);
+          response.pipe(file);
 
-        file.on("finish", () => {
-          file.close();
-        });
+          file.on("finish", () => {
+            file.close();
+          });
+        }
       });
     }
   }
